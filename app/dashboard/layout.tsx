@@ -1,52 +1,70 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getServerAuthorization } from "@/lib/authorization";
+
+const navigationItems = [
+  { permission: "users.read", label: "Users", href: "/dashboard/users" },
+  { permission: "missionaries.read_all", label: "Missionaries", href: "/dashboard#missionaries" },
+  { permission: "field.reports.read", label: "Field reports", href: "/dashboard#field-reports" },
+  { permission: "inventory.read", label: "Inventory", href: "/dashboard#inventory" },
+  { permission: "financial.read", label: "Finance", href: "/dashboard#finance" },
+];
 
 export default async function DashboardLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const authorization = await getServerAuthorization();
+  if (!authorization) redirect("/sign-in");
 
-  if (!user) {
-    redirect("/sign-in");
-  }
-
-  const { data: appUser, error } = await supabase
-    .from("app_users")
-    .select("display_name, status")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error("Unable to verify your platform access. Please try again.");
-  }
+  const isActive = authorization.profile?.status === "active";
 
   return (
     <div className="min-h-screen">
       <header className="border-b border-ink/10 bg-white/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8 lg:px-12">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-forest text-sm font-bold text-white">
-              OA
-            </span>
-            <div>
-              <p className="text-sm font-bold text-ink">OneWay Africa</p>
-              <p className="text-xs text-ink/60">Ministry platform</p>
-            </div>
-          </div>
-          {appUser?.status === "active" && (
-            <div className="flex items-center gap-3">
-              <span className="hidden max-w-48 truncate text-sm text-ink/70 sm:block">
-                {appUser.display_name}
+        <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8 lg:px-12">
+          <div className="flex items-center justify-between gap-4">
+            <Link aria-label="OneWay Africa dashboard" className="flex items-center gap-3" href="/dashboard">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-forest text-sm font-bold text-white">
+                OA
               </span>
-              <SignOutButton />
-            </div>
+              <span>
+                <span className="block text-sm font-bold text-ink">OneWay Africa</span>
+                <span className="block text-xs text-ink/60">Ministry platform</span>
+              </span>
+            </Link>
+            {isActive && (
+              <div className="flex items-center gap-3">
+                <span className="hidden max-w-48 truncate text-sm text-ink/70 sm:block">
+                  {authorization.profile?.display_name}
+                </span>
+                <SignOutButton />
+              </div>
+            )}
+          </div>
+          {isActive && (
+            <nav aria-label="Main navigation" className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              <Link
+                className="shrink-0 rounded-full bg-sand px-4 py-2 text-sm font-semibold text-ink"
+                href="/dashboard"
+              >
+                Overview
+              </Link>
+              {navigationItems
+                .filter(({ permission }) => authorization.permissions.has(permission))
+                .map(({ href, label }) => (
+                  <Link
+                    className="shrink-0 rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition hover:bg-sand hover:text-ink"
+                    href={href}
+                    key={label}
+                  >
+                    {label}
+                  </Link>
+                ))}
+            </nav>
           )}
         </div>
       </header>
-      {appUser?.status === "active" ? (
+      {isActive ? (
         <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12 lg:px-12">{children}</main>
       ) : (
         <main className="mx-auto max-w-2xl px-5 py-16 sm:px-8">
