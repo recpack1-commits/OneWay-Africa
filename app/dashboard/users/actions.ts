@@ -92,6 +92,9 @@ export async function inviteUserAction(
   if (!siteUrl) {
     return { error: "User invitations are not configured. Contact your platform administrator." };
   }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { error: "Invitations are unavailable because server-side configuration is incomplete." };
+  }
 
   const admin = createSupabaseAdminClient();
   const { data: invitation, error: invitationError } = await admin.auth.admin.inviteUserByEmail(
