@@ -38,64 +38,98 @@ implementation plan, not an instruction to edit application code or migrations.
 
 ### Schema and calculations
 
-- Add an additive Stage 3 migration; do not modify the baseline or Stage 2 migrations.
-- Add an expense-line table linked to `expenses`, with line description and native
-  amount. Preserve the existing expense-level category and currency. Enforce that
-  submitted line totals reconcile to the parent amount in a transaction-safe path.
-- Represent the approved category list in `expense_categories`, with
-  `receipt_required = true` for all 11. Do not add unapproved categories or test rows.
-- Require receipt links before expense submission. Keep file storage private and
-  validate upload limits/types once those operational limits are set.
-- Store confirmation entries as auditable receipt events and derive the cumulative
-  amount atomically. Keep partial receipts awaiting confirmation (or display a derived
-  partial state); confirm only at exact equality. Support documented short settlement
-  and overpayment reconciliation without rewriting receipt history. Define retry
-  idempotency before enabling confirmation writes.
-- Add rate date and source-note fields wherever a transaction can have a non-GHS
-  currency, including adjustments. Enforce GHS rate `1.0` and require explicit positive
-  rate/date/source for non-GHS transactions. Retain the native amount/currency.
-- Add transaction-safe GHS calculations rounded to two decimal places. Implement
-  `reimbursement_due` from approved expenses and confirmed received net; document and
-  test which approved adjustments/reversals contribute to the `net` amount to prevent
-  double counting. Make balance-sensitive updates atomic.
-- Support period carry-forward only between 2027+ reporting periods, with Financial
-  Director review and auditable adjustments. Define any cap/close mechanics without
-  discarding unused confirmed funds.
+- Create a new additive migration after the current Stage 2 migrations. Do not rewrite
+  the remote-schema snapshot, alter Stage 2 grants, insert test rows, or backfill
+  invented 2026/2027 transactions.
+- Add `expense_lines` with an ID, `expense_id` FK, description, and positive native
+  amount (`numeric(14,2)`). Keep category and currency on `expenses`. Validate, in the
+  same transaction that submits the expense, that at least one line exists and the
+  line sum exactly equals the parent amount. A normal row-level `CHECK` cannot enforce
+  this cross-row invariant; use a constrained database function/transaction path or an
+  appropriate deferred constraint trigger. Preserve draft editing until submission.
+- Represent the exact approved 11 categories in `expense_categories` and set
+  `receipt_required = true` for every category. Require at least one valid receipt link
+  before submission. Preserve private storage; enforce approved upload limits/types
+  when those limits have been decided.
+- Treat `disbursement_confirmations` as an append-only receipt-event history. For each
+  `confirm` event, add the received amount to the running total atomically; do not
+  overwrite prior events. A dispute changes the parent to `disputed` and keeps the
+  event/note. Keep the existing awaiting state while partial (the UI may label it
+  “Partially confirmed”); set `confirmed` only at exact equality. Add a documented
+  short-settlement path requiring variance/fee note and Financial Director review.
+  Flag overpayment for Financial Director reconciliation and a linked financial
+  adjustment; never silently clamp or replace the received total.
+- Add an idempotency key with a unique constraint for confirmation submissions so
+  retries cannot create a second receipt event. Decide key lifetime and whether one
+  key is scoped to a user or disbursement before enabling writes.
+- Retain `exchange_rate_to_ghs` on disbursements and expenses; add rate-date and
+  source-note fields to both and add rate, date, and source-note fields to
+  `financial_adjustments`. Require rate `1.0` for GHS; require a positive explicit rate,
+  date, and source note for each non-GHS transaction. Do not fabricate rates to
+  backfill existing records. Preserve native currency/amount and calculate GHS values
+  with two-decimal rounding.
+- Define one transaction-safe financial calculation path returning native amounts and
+  GHS equivalents. Proposed netting to validate before coding:
+  - Sum confirmed disbursement receipt events once; add approved signed adjustments
+    linked to disbursements once, including explicit reversal entries.
+  - Sum approved expenses; apply approved correction/reversal adjustments linked to
+    expenses once. Do not count reimbursement settlement adjustments as new expenses.
+  - Include carry-forward opening funds in period availability exactly once; do not
+    count it again as a receipt or adjustment.
+  - Calculate `reimbursement_due = max(0, approved_expenses_GHS -
+    confirmed_received_net_GHS)`. Recalculate under a transaction/lock when approving
+    expenses, confirming receipts, settling adjustments, or closing a period.
+- Make adjustment records append-only in practice: corrections use signed adjustments,
+  reversals link through `reversal_of_id`, and approval records actor/time. Define which
+  adjustment types affect which side of the net formula before adding constraints.
+- Carry forward unused confirmed funds between 2027+ periods through an auditable,
+  Financial Director-reviewed adjustment. Do not discard unused balances; leave
+  caps/period-close rules subject to the confirmations below.
 
 ### RLS, authorization, and audit
 
-- Keep all existing financial grants unchanged, including `financial.read`,
-  `financial.manage`, and `financial.roles.manage`. Do not grant finance permissions
-  to other roles or add missionary finance writes without separate approval.
-- Keep financial reads behind existing permission/own-record policies. Add narrowly
-  scoped RLS policies for each Stage 3 write path; do not rely on UI filtering.
-- Check active-profile and permission requirements in every server action as well as
-  RLS. Restrict management writes and review/settlement decisions to
-  `financial.manage`; retain the existing sign-in and inactive-profile guards.
-- Authorize receipt metadata and private file access through the related financial
-  record and approved permission/ownership rules. Never expose file contents through
-  audit records.
-- Extend append-only audit coverage to financial creation/edit, line changes,
-  confirmation/dispute/settlement, receipt metadata, expense review, currency-rate
-  changes, carry-forward, reimbursement, and adjustments. Record actor, entity,
-  timestamp, and relevant before/after status and amounts; prohibit mutation/deletion
-  of audit history.
+- Preserve every existing grant, including `financial.read`, `financial.manage`, and
+  `financial.roles.manage`; add no financial grants to other roles. Keep existing own
+  read policies. No missionary expense-submission or confirmation writes are approved.
+- Enable RLS on any new table. Grant authenticated clients only the SQL operations
+  needed by approved actions, and add policies scoped to active users with
+  `financial.manage` for writes. For expense lines and receipts, constrain access
+  through the parent expense/disbursement; retain existing own-record reads without
+  implying write access. Keep table privileges and RLS aligned.
+- Check active profile and exact permission in every server action and again in the
+  database write path; never treat UI hiding as authorization. Preserve dashboard
+  `/sign-in` redirects and inactive-profile restrictions. Avoid broad service-role
+  bypasses for user-initiated finance actions.
+- Make Financial Director reviews append-only rows containing reviewer, decision,
+  comments, old/new status, and timestamp. Require `financial.manage`; enforce the
+  approved transition matrix and prohibit self-approval if confirmed. Rejections,
+  queries, re-submissions, and settlement must retain prior review records.
+- Add append-only audit events for expense/line creation and changes, confirmations
+  and disputes, status transitions, receipt metadata, FX values, reviews, adjustments,
+  carry-forward, and reimbursement settlement. Capture actor, entity, timestamp, and
+  relevant before/after status/amount/currency/rate values. Deny update/delete/truncate
+  of audit history and never store receipt contents.
 
 ### `/dashboard/finance` and behavior
 
-- Add `/dashboard/finance` within the existing authenticated dashboard layout. Require
-  `financial.read` to view and `financial.manage` for management actions.
-- Keep `/dashboard`, `/dashboard/users`, and the existing `/dashboard#finance` anchor
-  working. Add a deliberate path from the existing finance entry to the new screen
-  without silently removing the anchor or changing unrelated routes.
-- Include views for disbursements/confirmations, expense lines and receipts, review
-  queues, balances/carry-forward, reimbursements/adjustments, and GHS reports while
-  retaining original currency values.
-- Show warnings and require a note when an expense exceeds confirmed received funds;
-  do not block solely for that reason. Surface disputes, short-settlement variance,
-  and overpayment reconciliation to the Financial Director.
-- Preserve `client_submission_id` idempotency for expense submissions and define
-  explicit status transitions and retry protection for confirmation events.
+- Add `/dashboard/finance` as a child of the existing authenticated dashboard layout.
+  Require `financial.read` for page data and independently require
+  `financial.manage` for each mutation. Keep `/dashboard`, `/dashboard/users`, the
+  existing Finance link behavior, and `/dashboard#finance` working; provide a deliberate
+  link to the new route without removing the anchor.
+- Page boundaries: list/search/filter disbursements and expenses, review queues,
+  receipt metadata, native and GHS totals, period balance/carry-forward, adjustments,
+  and reimbursement. Do not return private receipt contents unless the caller passes
+  the same parent-record authorization checks as the receipt metadata.
+- Server-action boundaries: validate IDs, amounts, currency/rate/date/source, receipt
+  links, period year, and status transition; derive actor from the authenticated
+  session; require notes for over-funds warnings and short settlements; submit one
+  atomic database operation for line totals, confirmation totals, and net balances.
+  Return explicit authorization/validation/conflict errors and do not accept actor,
+  status, cumulative balance, or GHS total as trusted client input.
+- Keep expense submissions idempotent through existing `client_submission_id`; add
+  equivalent idempotency for receipt events. Do not enable query/reject/resubmit/cancel
+  actions until the transition decisions below are approved.
 
 ## Remaining implementation decisions
 
@@ -104,14 +138,15 @@ corresponding workflow.
 
 | Item | Still to define |
 | --- | --- |
-| Route contents | Exact screens, filters, and whether the existing finance navigation link points to the new route or remains the dashboard anchor. Both locations must continue to work. |
-| Expense review | Whether queried expenses can be edited/resubmitted, whether rejection is terminal, whether submitters can cancel, and whether self-approval is prohibited. |
-| Expense line categories | Whether all lines inherit one parent category or can be assigned different categories; confirm before finalizing the line schema. |
-| Receipt uploads | File size/type limits and any exceptional handling. No amount-based or category-based waiver is approved. |
-| Confirmation retries | How a client identifies a retry versus a new receipt event; keep event history and prevent duplicate amounts. |
-| Short settlement | The explicit close status/transition and Financial Director approval required for a settled short payment. |
-| GHS net formula | Which approved financial adjustments/reversals affect `confirmed_received_net`, avoiding double counting. |
-| Period handling | Whether transaction dates must fall within their reporting period, and how the Financial Director approves any carry-forward cap/period-close adjustment. |
+| Receipt uploads | Maximum file size, allowed MIME/extensions, count limits per expense, and any exceptional process. No amount/category waiver is approved; determine whether a receipt can be replaced while preserving its audit history. |
+| Expense transitions | For each current state (`draft`, `submitted`, `queried`, `approved`, `rejected`, `cancelled`), specify allowed next states, who can perform them, whether queried items may be edited/resubmitted, whether rejection is terminal, whether submitters can cancel, and whether self-approval is prohibited. |
+| Disbursement transitions | Specify state behavior for awaiting/partial, confirmed (exact amount only), disputed, cancelled, settled-short, and overpayment-reconciliation. Decide whether partial is a stored status or derived from amount; define who clears disputes and who approves short settlement. |
+| Confirmation amount and retries | Confirm that each confirmation amount represents a new incremental receipt (as proposed), rather than a cumulative snapshot. Specify idempotency key creation, scope, retention, and conflict response so a network retry cannot double-count a receipt. |
+| Expense line categories | Confirm whether all lines inherit the single parent category (as proposed) or may be assigned different categories; finalize line fields and rounding/reconciliation behavior before schema creation. |
+| Adjustment netting | Approve which adjustment types and signs affect disbursement receipts versus approved expenses; ensure reversals offset their referenced adjustment once. Decide whether carry-forward funds are included in `confirmed_received_net` for the reimbursement formula or tracked separately in available balance. |
+| Route contents and navigation | Specify finance screen views, filters, pagination, and which actions each view exposes. Decide whether the existing Finance link changes to `/dashboard/finance` or stays at `/dashboard#finance`; both routes/anchors must remain functional. |
+| Server-action boundaries | Confirm the action inventory (create/update disbursement, confirm/dispute, expense submit/revise, review, short settlement, adjustment, reimbursement, period close) and exact permission for each. Baseline plan: page reads require `financial.read`; all writes require active profile plus `financial.manage`; no new role grants or own-record writes. |
+| Period handling | Whether transaction dates must fall within their reporting period, how the Financial Director approves carry-forward caps/close adjustments, and how carry-forward is represented in the next 2027+ period without counting it twice. |
 
 ## Validation and deployment plan
 
