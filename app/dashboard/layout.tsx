@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { getServerAuthorization } from "@/lib/authorization";
@@ -24,9 +25,13 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8 lg:px-12">
           <div className="flex items-center justify-between gap-4">
             <Link aria-label="OneWay Africa dashboard" className="flex items-center gap-3" href="/dashboard">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-forest text-sm font-bold text-white">
-                OA
-              </span>
+              <Image
+                alt=""
+                className="size-10 rounded-full"
+                height={40}
+                src="/icons/oneway-africa-mark.png"
+                width={40}
+              />
               <span>
                 <span className="block text-sm font-bold text-ink">OneWay Africa</span>
                 <span className="block text-xs text-ink/60">Ministry platform</span>

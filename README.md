@@ -1,4 +1,4 @@
-# OneWay Africa & BiblePlus Ministry Platform
+# OneWay Africa
 
 The application is built with Next.js App Router, TypeScript, Tailwind CSS, and Supabase
 authentication. It is designed for 2027 operations.

@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  background: #f6f5ef;
+  background: #fff;
 }
 
 html {
@@ -15,10 +15,7 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(ellipse at 10% 12%, rgba(240, 191, 103, 0.2), transparent 34rem),
-    radial-gradient(ellipse at 92% 78%, rgba(61, 128, 96, 0.12), transparent 32rem),
-    #f6f5ef;
+  background: #fff;
   color: #18332d;
   font-family: Arial, Helvetica, sans-serif;
 }

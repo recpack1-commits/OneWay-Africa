@@ -3,15 +3,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "OneWay Africa | Ministry Platform",
+    default: "OneWay Africa",
     template: "%s | OneWay Africa",
   },
-  description: "Secure ministry management for OneWay Africa and BiblePlus.",
+  description:
+    "OneWay Africa is a Christian missions organisation advancing the gospel among unreached people groups.",
   applicationName: "OneWay Africa",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/icons/icon-192.svg",
-    apple: "/icons/icon-192.svg",
+    icon: "/icons/oneway-africa-mark.png",
+    apple: "/icons/oneway-africa-mark.png",
   },
 };
 
