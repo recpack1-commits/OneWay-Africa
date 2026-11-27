@@ -104,8 +104,9 @@ export default async function UsersPage() {
               Invite a user
             </h2>
             <p className="mt-1 text-sm text-ink/65">
-              The invitee receives a secure account setup link. Confidential financial roles can
-              only be assigned by a Financial Director.
+              The invitee receives a secure account setup link. System Administrators can assign
+              standard roles; only Financial Directors can assign roles with confidential
+              financial access.
             </p>
           </div>
           <InviteUserForm roles={availableRoles} />

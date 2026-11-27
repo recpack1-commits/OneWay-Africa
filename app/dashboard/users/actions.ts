@@ -92,8 +92,10 @@ export async function inviteUserAction(
   const roleAccessError = await checkRoleAssignmentPermission(role.id, authorization);
   if (roleAccessError) return { error: roleAccessError };
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return { error: "Invitations are unavailable because server-side configuration is incomplete." };
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+    return {
+      error: "Set SUPABASE_SERVICE_ROLE_KEY in the server environment to enable invitations.",
+    };
   }
 
   const admin = createSupabaseAdminClient();
@@ -104,6 +106,12 @@ export async function inviteUserAction(
       redirectTo: `${siteOrigin.origin}/auth/callback?next=/update-password`,
     },
   );
+  if (invitationError?.status === 401 || invitationError?.status === 403) {
+    return {
+      error:
+        "Supabase rejected SUPABASE_SERVICE_ROLE_KEY. Verify it is valid for this project and has Auth Admin API access.",
+    };
+  }
   if (invitationError || !invitation.user) {
     return { error: "Unable to send the invitation. Check the email address and try again." };
   }
