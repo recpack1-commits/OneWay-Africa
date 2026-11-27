@@ -24,18 +24,20 @@ the 2027+ reporting-period scope. Do not create test data or 2026 historical rec
 
 Record an approved decision and its owner before implementing the related behavior.
 
-| Topic | Decision required |
-| --- | --- |
-| Routes and visibility | Confirm whether to add `/dashboard/finance` and which views it contains. Keep `#finance` working or redirect it deliberately; do not silently remove the existing dashboard entry. |
-| Role boundaries | Confirm whether Missionaries may submit their own expenses or confirm their own disbursements. Confirm whether Office Staff or Field Directors receive any finance access. No role receives access by inference. |
-| Expense categories | Approve the category list, who maintains it, and whether inactive categories remain visible on historical 2027+ expenses. |
-| Receipts | Define category requirements, any amount threshold, permitted exceptions, file limits/types, and who may view uploaded receipts. Existing `receipt_required` is a category-level boolean; no threshold is defined. |
-| Partial receipt | Define whether confirmation amounts are incremental or cumulative, how totals update, and when a disbursement is considered confirmed, disputed, or still awaiting confirmation. |
-| Available funds and overspend | Define the balance formula, the treatment of multiple disbursements/currencies/exchange rates, whether expenses above received funds are blocked or allowed, and who may override. |
-| Expense review | Define whether queried expenses may be edited/resubmitted, whether rejection is terminal, whether submitters can cancel, and whether a reviewer may approve their own submission. Preserve review history. |
-| Carry-forward and period close | Define whether unused funds carry to another period and how/when a period is closed. Do not infer this from `reporting_period_id`. |
-| Reimbursements and adjustments | Define whether/how reimbursements are paid and recorded, who requests and approves them, and how corrections/reversals work. The existing adjustment table does not settle these policies. |
-| Currencies and dates | Confirm allowed currencies, when exchange rates are mandatory, the conversion convention, and whether expense/disbursement dates must fall within their reporting period. |
+| Item | Current schema status | Question to confirm |
+| --- | --- | --- |
+| Routes and visibility | Finance is the `#finance` dashboard anchor, visible with `financial.read`; no dedicated finance route exists. | Add `/dashboard/finance`, and which views should it contain? Keep `#finance` working or redirect it deliberately? Preserve the sign-in and active-profile guards. |
+| Role boundaries | Stage 2 grants the Financial Director `financial.read` and `financial.manage`; other roles receive no finance permissions by default. Own-record reads exist for some records, but there are no finance write policies. | May Missionaries submit expenses or confirm their own disbursements? Should Office Staff or Field Directors receive any finance access? Do not infer new access. |
+| Expense categories | Categories have `code`, `name`, `is_active`, and a category-level `receipt_required` flag. | What categories are approved, who maintains them, and should inactive categories remain visible on historical 2027+ expenses? |
+| Itemised expenses | An expense stores one category, amount, and description; there is no expense line-item table. | Are expenses itemised? If so, what fields and category rules apply per line? |
+| Receipts | Disbursement and expense receipt links to private file assets exist. There is no receipt threshold or exception policy. | Which categories require receipts, are there amount thresholds or exceptions, what file limits/types apply, and who may view uploaded files? |
+| Disbursement receipt confirmation | Disbursements store status and received amount/date; confirmation rows support `confirm` or `dispute`, amount, date, and notes. | Are partial amounts incremental or cumulative? How do they update totals, and when is a disbursement confirmed, disputed, or awaiting confirmation? What prevents duplicate confirmations? |
+| Financial Director expense review | Expense statuses include `submitted`, `queried`, `approved`, and `rejected`; review rows record decisions and status changes. No transition rules are enforced by the schema. | Which transitions are allowed? Can queried expenses be edited/resubmitted, is rejection terminal, can submitters cancel, and may a reviewer approve their own submission? Preserve review history. |
+| Available balance and overspend | No balance formula or financial aggregation exists. Disbursement, expense, and adjustment amounts/currencies are stored separately. | How is available balance calculated, which records count, and how are multiple disbursements, currencies, and exchange rates treated? Are over-balance expenses blocked or allowed, and who may override? |
+| Reimbursements and adjustments | Adjustments support pending/approved/rejected states and reimbursement, correction, reversal, or other types; no payment/settlement workflow is defined. | How are reimbursements requested, approved, paid, and recorded? Who may act, and how are corrections and reversals handled? |
+| Carry-forward and period close | Transactions reference a reporting period, but there is no close or carry-forward policy. | Do unused funds carry to another period? How and when is a period closed? Do not infer either behavior from `reporting_period_id`. |
+| Currencies, GHS reporting, and dates | Disbursements and expenses retain currency and have optional `exchange_rate_to_ghs`; adjustments retain currency but have no rate. Generated reports are generic records, not financial summaries. Reporting periods constrain years to 2027–2100, but transaction dates are not constrained to period dates. | Which currencies are allowed, when is a rate mandatory, and what conversion/rounding convention applies? Should reports show GHS totals while retaining each original currency and amount? Must transaction dates fall within their reporting period? |
+| Financial audit coverage | An append-only audit log exists, but the schema migrations do not add financial-table audit triggers. | Which financial creations, edits, decisions, receipts, and adjustments must be audited, and which actor/status/amount fields should be recorded? Never store file contents in the audit log. |
 
 ## Role boundary baseline
 
