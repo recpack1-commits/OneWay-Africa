@@ -2,14 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "OneWay Africa",
-    short_name: "OneWay Africa",
-    description:
-      "OneWay Africa is a Christian missions organisation advancing the gospel among unreached people groups.",
+    name: "JFC & BiblePlus Inventory Platform",
+    short_name: "JFC & BiblePlus",
+    description: "Quick access to JFC outreach data and BiblePlus audio Bible inventory.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#1f5a46",
+    background_color: "#F7FAF5",
+    theme_color: "#800D1D",
     icons: [
       {
         src: "/icons/oneway-africa-mark.png",

@@ -17,7 +17,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     <div>
       <h2 className="text-2xl font-semibold tracking-tight text-ink">Sign in</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        Use your authorized account to access the platform.
+        Use your authorized account to access outreach and inventory data.
       </p>
       {notice === "password-updated" && (
         <p role="status" className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-forest">

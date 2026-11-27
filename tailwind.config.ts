@@ -5,14 +5,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#18332d",
-        forest: "#1f5a46",
-        leaf: "#3d8060",
+        ink: "#2d201c",
+        forest: "#800d1d",
+        leaf: "#832927",
         sand: "#f6f5ef",
         sun: "#f0bf67",
       },
       boxShadow: {
-        card: "0 24px 70px -38px rgba(24, 51, 45, 0.35)",
+        card: "0 24px 70px -38px rgba(45, 32, 28, 0.35)",
       },
     },
   },

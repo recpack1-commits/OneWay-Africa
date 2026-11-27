@@ -3,12 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "OneWay Africa",
-    template: "%s | OneWay Africa",
+    default: "JFC & BiblePlus Inventory Platform | OneWay Africa",
+    template: "%s | JFC & BiblePlus Inventory Platform",
   },
   description:
-    "OneWay Africa is a Christian missions organisation advancing the gospel among unreached people groups.",
-  applicationName: "OneWay Africa",
+    "Quick access to JFC outreach data and BiblePlus audio Bible inventory for OneWay Africa.",
+  applicationName: "JFC & BiblePlus Inventory Platform",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icons/oneway-africa-mark.png",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1f5a46",
+  themeColor: "#800D1D",
   width: "device-width",
   initialScale: 1,
 };

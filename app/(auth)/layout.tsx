@@ -8,7 +8,7 @@ export default function AuthLayout({
 }>) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-5 sm:px-8 sm:py-8 lg:px-12">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/sign-in" className="flex items-center gap-3" aria-label="OneWay Africa home">
           <Image
             alt=""
@@ -18,10 +18,12 @@ export default function AuthLayout({
             src="/icons/oneway-africa-mark.png"
             width={44}
           />
-          <span className="text-sm font-bold tracking-wide text-ink">OneWay Africa</span>
+          <span className="text-lg font-extrabold uppercase tracking-[0.1em] text-ink sm:text-xl">
+            ONEWAY AFRICA
+          </span>
         </Link>
-        <span className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-forest/70 sm:block">
-          Ministry platform
+        <span className="pl-14 text-[0.65rem] font-semibold uppercase leading-tight tracking-[0.13em] text-forest/70 sm:pl-0 sm:text-right sm:text-xs">
+          JFC &amp; BIBLEPLUS INVENTORY PLATFORM
         </span>
       </header>
 
@@ -62,7 +64,7 @@ export default function AuthLayout({
 
       <footer className="flex flex-col gap-2 border-t border-ink/10 py-5 text-xs text-ink/55 sm:flex-row sm:items-center sm:justify-between">
         <span>OneWay Africa</span>
-        <span>Secure access for authorized ministry team members</span>
+        <span>Secure access to outreach data and BiblePlus inventory</span>
       </footer>
     </main>
   );

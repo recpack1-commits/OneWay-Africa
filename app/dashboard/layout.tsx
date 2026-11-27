@@ -33,8 +33,12 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
                 width={40}
               />
               <span>
-                <span className="block text-sm font-bold text-ink">OneWay Africa</span>
-                <span className="block text-xs text-ink/60">Ministry platform</span>
+                <span className="block text-sm font-extrabold uppercase tracking-[0.08em] text-ink sm:text-base">
+                  ONEWAY AFRICA
+                </span>
+                <span className="block max-w-[12rem] text-[0.6rem] font-semibold uppercase leading-tight tracking-[0.1em] text-ink/60 sm:max-w-none sm:text-[0.65rem] sm:tracking-[0.13em]">
+                  JFC &amp; BIBLEPLUS INVENTORY PLATFORM
+                </span>
               </span>
             </Link>
             {isActive && (

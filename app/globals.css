@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  background: #fff;
+  background: #f7faf5;
 }
 
 html {
@@ -15,8 +15,8 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background: #fff;
-  color: #18332d;
+  background: #f7faf5;
+  color: #2d201c;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -26,6 +26,6 @@ input {
 }
 
 :focus-visible {
-  outline: 3px solid #d99f3c;
+  outline: 3px solid #832927;
   outline-offset: 3px;
 }
