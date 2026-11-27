@@ -10,7 +10,6 @@ const navigationItems = [
   { permission: "missionaries.read_all", label: "Missionaries", href: "/dashboard#missionaries" },
   { permission: "field.reports.read", label: "Field reports", href: "/dashboard#field-reports" },
   { permission: "inventory.read", label: "Inventory", href: "/dashboard#inventory" },
-  { permission: "financial.read", label: "Finance", href: "/dashboard#finance" },
 ];
 
 export default async function DashboardLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -69,6 +68,22 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
                     {label}
                   </Link>
                 ))}
+              {(authorization.permissions.has("financial.read")
+                || authorization.permissions.has("financial.expenses.own_manage")
+                || authorization.permissions.has("financial.disbursements.own_confirm")
+                || authorization.permissions.has("financial.disbursements.create")
+                || authorization.permissions.has("financial.disbursements.evidence")) && (
+                <Link
+                  className="shrink-0 rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition hover:bg-sand hover:text-ink"
+                  href="/dashboard/finance"
+                >
+                  {authorization.permissions.has("financial.read")
+                    ? "Finance"
+                    : authorization.permissions.has("financial.disbursements.create")
+                      ? "Disbursements"
+                      : "My finance"}
+                </Link>
+              )}
             </nav>
           )}
         </div>

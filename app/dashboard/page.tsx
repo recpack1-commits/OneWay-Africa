@@ -43,6 +43,27 @@ export default async function DashboardPage() {
   const visibleModules = modules.filter(({ permission }) =>
     authorization.permissions.has(permission),
   );
+  const hasScopedFinance = [
+    "financial.expenses.own_manage",
+    "financial.disbursements.own_confirm",
+    "financial.disbursements.create",
+    "financial.disbursements.evidence",
+  ].some((permission) => authorization.permissions.has(permission));
+  const dashboardModules = [
+    ...visibleModules,
+    ...(!authorization.permissions.has("financial.read") && hasScopedFinance
+      ? [{
+          id: "my-finance",
+          title: authorization.permissions.has("financial.disbursements.create")
+            ? "Disbursement workspace"
+            : "My finance",
+          description: authorization.permissions.has("financial.disbursements.create")
+            ? "Record disbursements and attach payment evidence for records you create."
+            : "Manage your own eligible expenses and confirm disbursements assigned to you.",
+          href: "/dashboard/finance",
+        }]
+      : []),
+  ];
 
   return (
     <div className="space-y-8">
@@ -68,13 +89,18 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {visibleModules.length > 0 ? (
+      {dashboardModules.length > 0 ? (
         <section aria-label="Available work areas" className="grid gap-4 sm:grid-cols-2">
-          {visibleModules.map((module) => {
+          {dashboardModules.map((module) => {
             const content = (
               <>
                 <h2 className="font-semibold text-ink">{module.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink/65">{module.description}</p>
+                {module.id === "finance" && (
+                  <Link className="mt-4 inline-flex text-sm font-semibold text-forest underline" href="/dashboard/finance">
+                    Open Finance workspace →
+                  </Link>
+                )}
               </>
             );
             const className =
