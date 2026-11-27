@@ -8,7 +8,7 @@ export type ServerAuthorization = {
   profile: {
     display_name: string;
     email: string | null;
-    status: "active" | "inactive" | "suspended";
+    status: "active" | "inactive" | "suspended" | "invited";
   } | null;
   roles: Array<{ code: string; name: string }>;
   permissions: Set<string>;

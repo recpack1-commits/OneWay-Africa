@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAnyPermission, requirePermission } from "@/lib/authorization";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getConfiguredSiteOrigin } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type UserManagementActionState = {
@@ -74,6 +75,9 @@ export async function inviteUserAction(
     return { error: "Enter a valid email address and select a valid role." };
   }
 
+  const siteOrigin = getConfiguredSiteOrigin();
+  if (!siteOrigin.ok) return { error: siteOrigin.error };
+
   const supabase = await createSupabaseServerClient();
   const { data: role, error: roleError } = await supabase
     .from("roles")
@@ -88,10 +92,6 @@ export async function inviteUserAction(
   const roleAccessError = await checkRoleAssignmentPermission(role.id, authorization);
   if (roleAccessError) return { error: roleAccessError };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!siteUrl) {
-    return { error: "User invitations are not configured. Contact your platform administrator." };
-  }
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return { error: "Invitations are unavailable because server-side configuration is incomplete." };
   }
@@ -100,8 +100,8 @@ export async function inviteUserAction(
   const { data: invitation, error: invitationError } = await admin.auth.admin.inviteUserByEmail(
     email,
     {
-      data: { display_name: displayName },
-      redirectTo: `${new URL(siteUrl).origin}/auth/callback?next=/update-password`,
+      data: { display_name: displayName, invitation_pending: true },
+      redirectTo: `${siteOrigin.origin}/auth/callback?next=/update-password`,
     },
   );
   if (invitationError || !invitation.user) {
@@ -116,18 +116,7 @@ export async function inviteUserAction(
   if (assignmentError) {
     return {
       error:
-        "The invitation was sent, but the role could not be assigned. The account remains inactive; retry the role assignment from the directory.",
-    };
-  }
-
-  const { error: activationError } = await supabase
-    .from("app_users")
-    .update({ status: "active", deactivated_at: null, deactivated_by: null })
-    .eq("id", invitation.user.id);
-  if (activationError) {
-    return {
-      error:
-        "The invitation and role were created, but the account could not be activated. It remains blocked until you retry.",
+        "The invitation was sent, but the role could not be assigned. The account remains blocked; retry the role assignment from the directory.",
     };
   }
 
@@ -209,6 +198,19 @@ export async function setUserStatusAction(
   }
 
   const supabase = await createSupabaseServerClient();
+  if (status === "active") {
+    const { data: targetUser, error: targetUserError } = await supabase
+      .from("app_users")
+      .select("status")
+      .eq("id", userId)
+      .maybeSingle();
+    if (targetUserError) return { error: "Unable to verify that account. Please try again." };
+    if (!targetUser) return { error: "That account could not be found or is not available to you." };
+    if (targetUser.status === "invited") {
+      return { error: "Invited accounts become active after accepting the invitation." };
+    }
+  }
+
   const { data, error } = await supabase
     .from("app_users")
     .update({

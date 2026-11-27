@@ -9,7 +9,7 @@ export type Database = {
           display_name: string;
           email: string | null;
           id: string;
-          status: "active" | "inactive" | "suspended";
+          status: "active" | "inactive" | "suspended" | "invited";
           updated_at: string;
         };
         Insert: {
@@ -19,7 +19,7 @@ export type Database = {
           display_name: string;
           email?: string | null;
           id: string;
-          status?: "active" | "inactive" | "suspended";
+          status?: "active" | "inactive" | "suspended" | "invited";
           updated_at?: string;
         };
         Update: {
@@ -29,7 +29,7 @@ export type Database = {
           display_name?: string;
           email?: string | null;
           id?: string;
-          status?: "active" | "inactive" | "suspended";
+          status?: "active" | "inactive" | "suspended" | "invited";
           updated_at?: string;
         };
         Relationships: [];

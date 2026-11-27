@@ -139,7 +139,7 @@ export function UserManagementControls({
   canManageStatus,
 }: Readonly<{
   userId: string;
-  status: "active" | "inactive" | "suspended";
+  status: "active" | "inactive" | "suspended" | "invited";
   assignedRoles: AssignedRole[];
   availableRoles: RoleOption[];
   canManageRoles: boolean;
@@ -202,7 +202,7 @@ export function UserManagementControls({
       )}
       {canManageRoles && <ActionMessage state={assignState} />}
 
-      {canManageStatus && (
+      {canManageStatus && status !== "invited" && (
         <form action={statusAction} className="mt-4">
           <input name="userId" type="hidden" value={userId} />
           <input name="status" type="hidden" value={status === "active" ? "inactive" : "active"} />

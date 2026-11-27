@@ -92,8 +92,8 @@ export default async function UsersPage() {
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf">Access management</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">User directory</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/70">
-          Manage platform access for 2027 operations. New invitations receive a role before the
-          account is activated; incomplete invitations remain blocked.
+          Manage platform access for 2027 operations. Invited users remain blocked until they accept
+          their invitation.
         </p>
       </header>
 

@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getConfiguredSiteOrigin } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthActionState = {
@@ -45,23 +46,25 @@ export async function requestPasswordResetAction(
     return { error: "Enter your email address." };
   }
 
+  const siteOrigin = getConfiguredSiteOrigin();
+  if (!siteOrigin.ok) return { error: siteOrigin.error };
+
   const requestHeaders = await headers();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-
-  if (!siteUrl) {
-    return { error: "Password recovery is not configured. Contact your platform administrator." };
-  }
-
-  const configuredOrigin = new URL(siteUrl).origin;
   const requestOrigin = requestHeaders.get("origin");
 
-  if (requestOrigin && new URL(requestOrigin).origin !== configuredOrigin) {
-    return { error: "Unable to process this request. Reload the page and try again." };
+  if (requestOrigin) {
+    try {
+      if (new URL(requestOrigin).origin !== siteOrigin.origin) {
+        return { error: "Unable to process this request. Reload the page and try again." };
+      }
+    } catch {
+      return { error: "Unable to process this request. Reload the page and try again." };
+    }
   }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${configuredOrigin}/auth/callback?next=/update-password`,
+    redirectTo: `${siteOrigin.origin}/auth/callback?next=/update-password`,
   });
 
   if (error) {

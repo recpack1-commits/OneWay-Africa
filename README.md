@@ -22,15 +22,19 @@ authentication. It is designed for 2027 operations.
 Sign-in is available at `/sign-in`. Password recovery sends a PKCE link through
 `/auth/callback`, then allows the user to set a new password at `/update-password`.
 `/dashboard` verifies the Supabase user and requires an `active` row in
-`public.app_users`; missing, inactive, or suspended profiles do not receive dashboard access.
+`public.app_users`; missing, invited, inactive, or suspended profiles do not receive dashboard
+access. Invited profiles become active after the invitation is accepted.
 The Stage 2 migration provisions profiles for Supabase Auth users, adds the five platform roles,
 permission-aware navigation, user invitations, role assignment, and account status controls.
 System Administrators do not receive confidential financial permissions and cannot assign
 financial-sensitive roles; that capability belongs to Financial Directors.
 
-The Stage 1 Supabase migration is preserved as-is. The Stage 2 migration is version-controlled at
-`supabase/migrations/20261125163225_stage2_roles_user_management.sql` and is not applied
-automatically. It does not invent or grant a role to any account. Before opening the dashboard,
-a trusted database operator must assign the initial System Administrator role to a verified,
-existing Auth user; do this through a controlled administrative database session. Review and
-explicitly authorize applying the migration before deploying it.
+The Stage 1 Supabase migration is preserved as-is. The Stage 2 migrations are version-controlled
+and are not applied automatically. Apply
+`supabase/migrations/20261125163225_stage2_roles_user_management.sql` first, followed by
+`supabase/migrations/20261127095600_stage2_invitation_and_audit_guards.sql`. The follow-up adds
+pending invitation activation, self-deactivation protection, and role auditing. These migrations
+do not invent or grant a role to any account. Before opening the dashboard, a trusted database
+operator must assign the initial System Administrator role to a verified, existing Auth user; do
+this through a controlled administrative database session. Review and explicitly authorize
+applying the migrations before deploying them.
